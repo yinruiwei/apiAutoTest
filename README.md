@@ -397,9 +397,3 @@ uv run python -m utils.data_manage.postman <collection.json> --out api/wms
 | 失败响应仍报 JSONPath | 将 `extract` 放在 `validate` 通过之后；登录类接口勿在 API 层统一 extract |
 | IDE 找不到 `allure` | 设置 `ALLURE_CMD` 或安装 Allure CLI 并加入 PATH |
 | RMS 登录 400 | 请求体字段需驼峰 `userName`（见 `api/rms/login.yaml`） |
-
----
-
-## License
-
-内部项目，按团队规范使用与分发。
