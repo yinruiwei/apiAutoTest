@@ -1,0 +1,131 @@
+# WCS 任务新增 POST /open/wcs/task/add — 幂等性与冲突验证
+# 接口积木：api/hub/wcs模式接口/任务新增_wcs级别.yaml
+#
+# 说明：
+#   - 幂等键为 wmsId（业务单号），第 2 次须与第 1 次 body 完全一致
+#   - 须整场景从第 1 步顺序执行（步骤间共享 Runner 上下文）
+#   - Hub 业务成功码多为 0（非 HTTP 200）；若环境为 200 请统一改 expect_value
+# 运行前请修改 config.variables 中的托盘号、仓位号、businessType
+name: "WCS任务新增-幂等性与冲突"
+
+config:
+  module: "HUB_WCS"
+  allure:
+    epic: "Hub"
+    feature: "WCS模式-任务新增"
+  variables:
+    # --- 幂等用例：固定 wmsId ---
+    wms_id_idempotent: '${gen_order_no("WCS_IDEMP")}'
+    # --- 冲突用例：独立 wmsId ---
+    wms_id_conflict: '${gen_order_no("WCS_CONF")}'
+    # --- 请按 DEV 环境真实数据填写 ---
+    pallet_code: "REPLACE_PALLET_CODE"
+    pallet_code_alt: "REPLACE_PALLET_CODE_ALT"
+    from_bin: "REPLACE_FROM_BIN"
+    to_bin: "REPLACE_TO_BIN"
+    business_type: "MOVE"
+
+teststeps:
+  # ========== 幂等：相同 wmsId + 相同 body 连续两次新增 ==========
+  - name: "幂等-第1次新增任务"
+    api: "api/hub/wcs模式接口/任务新增_wcs级别.yaml"
+    variables:
+      wmsId: $wms_id_idempotent
+      palletCode: $pallet_code
+      fromBin: $from_bin
+      toBin: $to_bin
+      businessType: $business_type
+    extract:
+      - var_name: first_task_id
+        jsonpath: "$.data.id"
+      - var_name: first_wms_id_resp
+        jsonpath: "$.data.wmsId"
+    validate:
+      - assert_type: "eq"
+        jsonpath: "$.code"
+        expect_value: 0
+        message: "第1次新增应成功"
+
+  - name: "幂等-第2次相同wmsId与body重放"
+    api: "api/hub/wcs模式接口/任务新增_wcs级别.yaml"
+    variables:
+      wmsId: $wms_id_idempotent
+      palletCode: $pallet_code
+      fromBin: $from_bin
+      toBin: $to_bin
+      businessType: $business_type
+    validate:
+      - assert_type: "eq"
+        jsonpath: "$.code"
+        expect_value: 0
+        message: "幂等重放仍应为业务成功"
+      - assert_type: "eq"
+        jsonpath: "$.data.id"
+        expect_value: $first_task_id
+        message: "幂等：任务 id 须与第1次一致"
+      - assert_type: "eq"
+        jsonpath: "$.data.wmsId"
+        expect_value: $first_wms_id_resp
+        message: "幂等：响应 wmsId 须与第1次一致"
+
+  - name: "幂等-按wmsId查询任务状态"
+    api: "api/hub/wcs模式接口/任务状态查询_wcs级别.yaml"
+    variables:
+      wmsId: $wms_id_idempotent
+    validate:
+      - assert_type: "eq"
+        jsonpath: "$.code"
+        expect_value: 0
+      - assert_type: "eq"
+        jsonpath: "$.data.wmsId"
+        expect_value: $wms_id_idempotent
+        message: "状态查询应能命中同一业务单号"
+
+  - name: "清理-取消幂等用例任务"
+    api: "api/hub/wcs模式接口/任务取消.yaml"
+    variables:
+      wmsId: $wms_id_idempotent
+      palletBinId: $to_bin
+    validate:
+      - assert_type: "eq"
+        jsonpath: "$.code"
+        expect_value: 0
+        message: "取消成功（任务须处于可取消状态）"
+
+  # ========== 冲突：同 wmsId、不同托盘 ==========
+  - name: "冲突-第1次新增（独立wmsId）"
+    api: "api/hub/wcs模式接口/任务新增_wcs级别.yaml"
+    variables:
+      wmsId: $wms_id_conflict
+      palletCode: $pallet_code
+      fromBin: $from_bin
+      toBin: $to_bin
+      businessType: $business_type
+    validate:
+      - assert_type: "eq"
+        jsonpath: "$.code"
+        expect_value: 0
+
+  - name: "冲突-同wmsId不同托盘（应失败或固定错误码）"
+    api: "api/hub/wcs模式接口/任务新增_wcs级别.yaml"
+    variables:
+      wmsId: $wms_id_conflict
+      palletCode: $pallet_code_alt
+      fromBin: $from_bin
+      toBin: $to_bin
+      businessType: $business_type
+    validate:
+      - assert_type: "not_eq"
+        jsonpath: "$.code"
+        expect_value: 0
+        message: "同 wmsId 不同 body 不应再次成功；若研发约定固定错误码请改为 eq"
+
+  - name: "清理-取消冲突用例任务（若第1步已成功创建）"
+    api: "api/hub/wcs模式接口/任务取消.yaml"
+    variables:
+      wmsId: $wms_id_conflict
+      palletBinId: $to_bin
+    validate:
+      - assert_type: "eq"
+        jsonpath: "$.code"
+        expect_value: 0

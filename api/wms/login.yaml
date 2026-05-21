@@ -1,0 +1,15 @@
+# API 接口积木定义 (API Definition)
+# 对应模型：core.models.ApiDefinitionModel
+name: "WMS系统-登录接口"
+
+request:
+  method: "POST"
+  url: "/user/login"
+  headers:
+    Content-Type: "application/json"
+  json:
+    userName: "$username"
+    password: "$password"
+
+# 不在此层写 extract / validate：登录既有正向也有反向场景，失败时 data 常为 null，
+# 统一提取会在 JSONPath 阶段报错；断言请放在 testcases 各步骤中按需编写。

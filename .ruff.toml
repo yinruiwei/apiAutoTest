@@ -1,0 +1,64 @@
+# .ruff.toml
+line-length = 120
+cache-dir = "./.ruff_cache"
+unsafe-fixes = true
+target-version = "py312"
+
+[lint]
+select = [
+    # --- 核心基础 ---
+    "E",      # pycodestyle errors (基础语法错误)
+    "W",      # pycodestyle warnings (基础语法警告)
+    "F",      # pyflakes (逻辑错误，如变量未使用)
+    "I",      # isort (导包自动排序)
+    "N",      # pep8-naming (强制规范命名，如类名大驼峰，函数名下划线)
+
+    # --- 进阶与防坑 (强烈建议开启整个大类) ---
+    "B",      # flake8-bugbear (发现常见的隐蔽 Bug，比如在默认参数中使用空列表 [])
+    "C4",     # flake8-comprehensions (自动优化 List/Dict 推导式，提升运行速度)
+    "UP",     # pyupgrade (开启完整大类！全面将旧语法自动重构为 Python 3.12 现代语法)
+    "PT",     # flake8-pytest-style (开启完整大类！严格规范 Pytest 的夹具和断言写法)
+    "SIM",    # flake8-simplify (开启完整大类！自动简化复杂的 if/else 和 try/except)
+    "PERF",   # perflint (开启完整大类！识别低效的循环和字典操作)
+    "RUF",    # Ruff 专属规则 (开启完整大类！)
+
+    # --- 约束类 ---
+    "T20",                   # flake8-print (禁止代码中出现 print，强制走 logger 日志系统)
+    "S113",       # flake8-bandit 的特别规则：做接口测试的铁律！强制 requests 必须配置 timeout
+]
+
+preview = true
+
+ignore = [
+    "B008",   # 允许在函数默认参数中执行函数调用 (HttpRunner 动态注入和 FastAPI 常用)
+    "RUF001", # 允许字符串中使用中文标点等 Unicode 字符
+    "RUF002", # 允许文档字符串中使用中文标点等 Unicode 字符
+    "RUF003", # 允许注释中使用中文标点等 Unicode 字符
+    "RUF012", # 强制类属性标注 ClassVar (对测试框架来说过于严格，忽略)
+    "PT001",  # 允许写 @pytest.fixture() 带括号 (统一规范，不强制去掉括号)
+    "PT011",  # 允许 pytest.raises 捕获宽泛的 Exception (有时测接口错误时不需要细化到具体子类)
+    "SIM115", # 允许打开文件不使用 with 语句 (有些全局缓存加载场景需要)
+    "N818",   # 【新增】允许异常命名以 Exception 或 Failure 结尾，不强制要求 Error
+]
+
+[lint.flake8-pytest-style]
+mark-parentheses = false
+parametrize-names-type = "list"
+parametrize-values-row-type = "list"
+parametrize-values-type = "tuple"
+
+[lint.isort]
+lines-between-types = 1
+order-by-type = true
+
+[lint.per-file-ignores]
+# 针对咱们项目的目录结构定制的豁免规则
+"testcases/**/*.py" = ["ANN"]        # 纯测试用例不需要写严苛的类型提示
+"**/conftest.py" = ["ANN"]           # pytest 配置不强制类型提示
+"run.py" = ["E402"]      # 全局入口允许在顶部做环境初始化后再导包
+"debugtalk.py" = ["F401", "F403"]    # 路由网关，允许未使用的导入或通配符导入
+"extensions/__init__.py" = ["F401"]  # 允许 init 文件暴露模块但内部不使用
+
+[format]
+quote-style = "single"
+docstring-code-format = true

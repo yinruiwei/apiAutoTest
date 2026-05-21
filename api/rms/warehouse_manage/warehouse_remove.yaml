@@ -1,0 +1,19 @@
+# API 接口积木定义 (API Definition)
+# 具体 id 列表由场景 variables 注入，例如 warehouse_remove_ids: ["2053803315822784512"]
+name: "RMS系统-删除仓库"
+
+request:
+  method: "POST"
+  url: "/warehouse/remove"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "$rms_token"
+  json:
+    # 等价 JSON: { "ids": [ "..." , "..." ] }
+    ids: "$warehouse_remove_ids"
+
+validate:
+  - assert_type: "eq"
+    jsonpath: "$.code"
+    expect_value: 200
+    message: "ok"

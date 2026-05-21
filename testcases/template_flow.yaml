@@ -1,0 +1,52 @@
+# 业务场景测试用例模板 (Scenario)
+# 1. 场景名称 (将自动映射为 Allure 报告的用例 Title)
+name: "WMS发单调度流转-全链路正向验证"
+
+# 2. 场景级配置 (包含 Allure 宏观标签)
+config:
+  allure:
+    epic: "WMS仓储管理系统"        # 顶级分类 (史诗/系统级)
+    feature: "出库作业流程"        # 次级分类 (功能模块)
+    # Story：由各 teststeps[].name 自动写入 Allure，无需在此配置 story
+
+  # [预留扩展] 场景级别的全局变量 (对以下所有 step 生效)
+  variables:
+    global_user: "admin"
+
+# 3. 测试步骤列表
+teststeps:
+  - name: "步骤1：登录 WMS 获取鉴权 Token"   # (将自动映射为 Allure 报告展开的 Step)
+    api: "api/wms/auth_login.yaml"         # 引用底层 API 积木
+    variables:                             # 注入请求数据 (替换积木里的 $变量)
+      username: $global_user               # 可以直接使用 config 里的全局变量
+      password: "password_123"
+    extract:                               # 提取上下文变量，供后续步骤使用
+      - var_name: "wms_token"              # 内存变量名
+        jsonpath: "$.data.token"           # 提取表达式
+
+  - name: "步骤2：创建 WMS 出库单"
+    api: "api/wms/create_outbound.yaml"
+    variables:
+      token: $wms_token                    # 无缝使用上一步提取的 token
+      order_type: "OUT_01"
+      # 支持调用 extensions 里的 Hook 函数动态生成数据
+      order_sn: ${generate_random_sn('OUT')}
+    extract:
+      - var_name: "order_id"
+        jsonpath: "$.data.order_id"
+    validate:                              # 业务级断言
+      - assert_type: "eq"
+        jsonpath: "$.code"
+        expect_value: 200
+      - assert_type: "eq"
+        jsonpath: "$.data.status"
+        expect_value: "CREATED"
+
+  - name: "步骤3：断言数据库状态 (底层支持)"
+    api: "api/common/query_db.yaml"        # 假设你封装了一个专门查库的通用组件
+    variables:
+      sql: "SELECT status FROM wms_order WHERE order_id = '$order_id'"
+    validate:
+      - assert_type: "eq"
+        jsonpath: "$.status"               # MySQL 返回结果已被封装为字典
+        expect_value: "WAIT_DISPATCH"

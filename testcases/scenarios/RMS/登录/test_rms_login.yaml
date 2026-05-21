@@ -1,0 +1,48 @@
+# testcases/scenarios/test_rms_login.yaml
+name: "RMS登录模块"
+config:
+  module: "RMS_AUTH"
+  allure:
+    epic: "RMS"
+    feature: "登录模块"
+
+teststeps:
+  - name: "用例1：[反向] 使用错误的密码登录"
+    api: "api/rms/login.yaml"
+    variables:
+      username: '${rms_login_username()}'
+      password: "123124"
+    validate:
+      # RMS 能识别用户但密码错误时返回 6302（与账号不存在 1000 区分）
+      - assert_type: "eq"
+        jsonpath: "$.code"
+        expect_value: 6302
+      - assert_type: "contains"
+        jsonpath: "$.message"
+        expect_value: "用户名或密码错误"
+
+  - name: "用例2：[反向] 账号不存在时登录"
+    api: "api/rms/login.yaml"
+    variables:
+      username: "ghost_user"
+      password: "123"
+    validate:
+      - assert_type: "eq"
+        jsonpath: "$.code"
+        expect_value: 1000
+      - assert_type: "contains"
+        jsonpath: "$.message"
+        expect_value: "账号不存在"
+
+  - name: "用例3：[正向] 正确的账号密码登录成功"
+    api: "api/rms/login.yaml"
+    variables:
+      username: '${rms_login_username()}'
+      password: '${rms_login_password()}'
+    extract:
+      - var_name: "rms_token"
+        jsonpath: "$.data"
+    validate:
+      - assert_type: "eq"
+        jsonpath: "$.code"
+        expect_value: 200

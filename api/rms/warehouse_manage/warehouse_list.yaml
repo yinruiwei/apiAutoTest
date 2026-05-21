@@ -1,0 +1,20 @@
+# API 接口积木定义 (API Definition)
+# 具体业务参数由 testcases/scenarios 中 config.variables / 步骤 variables 注入
+name: "RMS系统-查询仓库列表"
+
+request:
+  method: "POST"
+  url: "/warehouse/list"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "$rms_token"
+  json:
+    enable: "$warehouse_list_enable"
+    name: "$warehouse_list_name"
+    level: "$warehouse_list_level"
+    code: "$warehouse_list_code"
+validate:
+  - assert_type: "eq"
+    jsonpath: "$.code"
+    expect_value: 200
+    message: "ok"

@@ -1,0 +1,138 @@
+# testcases/scenarios/RMS/仓库管理/test_rms_warehouse.yaml
+name: "RMS仓库管理"
+
+config:
+  module: "RMS_WAREHOUSE"
+  allure:
+    epic: "RMS"
+    feature: "仓库管理"
+  variables:
+    # 新增
+    warehouse_add_enable: true
+    warehouse_add_name: "测试仓库"
+    warehouse_add_level: 1
+    warehouse_add_acreage: "10000"
+    warehouse_add_address: "江苏省南京市雨花台区"
+    warehouse_add_remark: "备注说明备注说明备注说明"
+    warehouse_add_manager: "张三"
+    warehouse_add_management_unit: "仓储"
+    warehouse_add_cell_phone: "18888888888"
+
+    # 查询
+    warehouse_list_enable: true
+    warehouse_list_name: "测试仓库"
+    warehouse_list_level: 1
+    warehouse_list_code: ""
+
+    # 编辑仓库：默认与新增字段对齐；步骤 4 会覆盖 id / code（与步骤 2、3 串联）
+    warehouse_update_enable: true
+    warehouse_update_name: "测试仓库（已编辑）"
+    warehouse_update_level: 1
+    warehouse_update_acreage: "10000"
+    warehouse_update_address: "江苏省南京市雨花台区（已编辑）"
+    warehouse_update_remark: "编辑后备注"
+    warehouse_update_manager: "张三"
+    warehouse_update_management_unit: "仓储公司（已编辑）"
+    warehouse_update_cell_phone: "1999999999"
+
+teststeps:
+  - name: "1：登录获取 Token"
+    api: "api/rms/login.yaml"
+    variables:
+      username: '${rms_login_username()}'
+      password: '${rms_login_password()}'
+    extract:
+      - var_name: "rms_token"
+        jsonpath: "$.data"
+    validate:
+      # 状态码为200
+      - assert_type: "eq"
+        jsonpath: "$.code"
+        expect_value: 200
+
+  - name: "2：新增仓库成功"
+    api: "api/rms/warehouse_manage/warehouse_add.yaml"
+    variables:
+      warehouse_add_code: '${gen_order_no("wh")}'
+    validate:
+      # # 状态码为200
+      - assert_type: "eq"
+        jsonpath: "$.code"
+        expect_value: 200
+
+  - name: "3：查询仓库并校验新增内容与返回结果是否一致"
+    api: "api/rms/warehouse_manage/warehouse_list.yaml"
+    variables:
+      warehouse_list_code: "$warehouse_add_code"
+    extract:
+      - var_name: "rms_warehouse_id"
+        jsonpath: "$.data[0].id"
+    validate:
+      # 状态码为200
+      - assert_type: "eq"
+        jsonpath: "$.code"
+        expect_value: 200
+      # data 不能为空列表 / 空对象
+      - assert_type: "len_gt"
+        jsonpath: "$.data"
+        expect_value: 0
+        message: "查询结果 $.data 不能为空"
+      # 校验 code 等于 新增的code
+      - assert_type: "eq"
+        jsonpath: "$.data[0].code"
+        expect_value: "$warehouse_add_code"
+        message: "查询结果与新增内容一致"
+
+  - name: "4：编辑仓库成功"
+    api: "api/rms/warehouse_manage/warehouse_update.yaml"
+    variables:
+      # 主键：步骤 3 从列表接口提取的 $.data[0].id
+      warehouse_update_id: "$rms_warehouse_id"
+    validate:
+      - assert_type: "eq"
+        jsonpath: "$.code"
+        expect_value: 200
+
+  - name: "5：查询仓库并校验编辑内容与返回结果是否一致"
+    api: "api/rms/warehouse_manage/warehouse_list.yaml"
+    validate:
+      # 状态码为200
+      - assert_type: "eq"
+        jsonpath: "$.code"
+        expect_value: 200
+      # data 不能为空列表 / 空对象
+      - assert_type: "len_gt"
+        jsonpath: "$.data"
+        expect_value: 0
+        message: "查询结果 $.data 不能为空"
+      # 校验 code 等于 新增的code
+      - assert_type: "eq"
+        jsonpath: "$.data[0].name"
+        expect_value: "$warehouse_update_name"
+        message: "查询结果与编辑内容一致"
+
+  - name: "9：删除新建的测试数据"
+    api: "api/rms/warehouse_manage/warehouse_remove.yaml"
+    variables:
+      warehouse_remove_ids:
+        - "$rms_warehouse_id"
+    validate:
+      # 状态码为200
+      - assert_type: "eq"
+        jsonpath: "$.code"
+        expect_value: 200
+
+  - name: "10：查询仓库并校验删除是否成功"
+    api: "api/rms/warehouse_manage/warehouse_list.yaml"
+    variables:
+      warehouse_list_code: "$warehouse_add_code"
+    validate:
+      # 状态码为200
+      - assert_type: "eq"
+        jsonpath: "$.code"
+        expect_value: 200
+      # 删除后多为空列表 []
+      - assert_type: "len_eq"
+        jsonpath: "$.data"
+        expect_value: 0
+        message: "删除后按编码查询应无记录（data 长度为 0）"

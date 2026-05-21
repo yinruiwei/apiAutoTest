@@ -1,0 +1,31 @@
+[project]
+name = "rms-api-test"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "aiomysql>=0.3.2",
+    "allure-pytest>=2.16.0",
+    "cache3>=0.4.3",
+    "cryptography>=48.0.0",
+    "faker>=40.15.0",
+    "httpx>=0.28.1",
+    "jsonpath>=0.82.2",
+    "jsonschema>=4.26.0",
+    "loguru>=0.7.3",
+    "pydantic>=2.13.3",
+    "python-dotenv>=1.2.2",
+    "pyyaml>=6.0.3",
+    "redis>=7.4.0",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.6.0",
+    "pytest>=9.0.3",
+    "pytest-asyncio>=0.25.0",
+    "ruff>=0.15.12",
+]
+
+[[tool.uv.index]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default = true

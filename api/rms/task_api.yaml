@@ -1,0 +1,9 @@
+name: rms_query_task
+system: rms
+request:
+  method: GET
+  path: /tasks/${order_no}
+  headers:
+    Authorization: ${get_token("rms")}
+validate:
+  - eq: [status_code, 200]

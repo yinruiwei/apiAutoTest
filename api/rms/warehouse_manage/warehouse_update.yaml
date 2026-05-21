@@ -1,0 +1,28 @@
+# API 接口积木定义 (API Definition)
+# 具体业务参数由 testcases/scenarios 中 config.variables / 步骤 variables 注入
+# 若实际路径或字段与后端不一致，请只改本文件的 url / json 键名
+name: "RMS系统-更新仓库"
+
+request:
+  method: "POST"
+  url: "/warehouse/update"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "$rms_token"
+  json:
+    id: "$warehouse_update_id"
+    enable: "$warehouse_update_enable"
+    name: "$warehouse_update_name"
+    level: "$warehouse_update_level"
+    acreage: "$warehouse_update_acreage"
+    address: "$warehouse_update_address"
+    remark: "$warehouse_update_remark"
+    manager: "$warehouse_update_manager"
+    managementUnit: "$warehouse_update_management_unit"
+    cellPhone: "$warehouse_update_cell_phone"
+
+validate:
+  - assert_type: "eq"
+    jsonpath: "$.code"
+    expect_value: 200
+    message: "更新仓库接口业务 code 非预期"

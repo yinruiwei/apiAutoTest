@@ -1,0 +1,12 @@
+.env
+.idea/
+.venv/
+.cursor
+doc
+.ruff_cache/
+.pytest_cache/
+pytest-cache-files-*/
+__pycache__/
+*.py[cod]
+logs/
+reports/

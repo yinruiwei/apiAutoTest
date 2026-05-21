@@ -1,0 +1,21 @@
+# API 接口积木定义模板 (API Definition)
+name: "WMS系统-创建出库单接口"
+
+request:
+  method: "POST"
+  url: "/api/v1/outbound/create"
+  headers:
+    # 支持引用上下文中动态传入的变量
+    Authorization: "Bearer $token"
+  json:  # 等同于 body_type: json (Pydantic会自动处理)
+    orderSn: $order_sn
+    orderType: $order_type
+    # 可以写死固定不变的默认参数
+    sourceSystem: "AUTO_TEST" 
+
+# [可选] 保底断言：凡是调用这个接口，不管业务场景怎么变，Http Code 必须是 200
+validate:
+  - assert_type: "eq"
+    jsonpath: "$.code"
+    expect_value: 200
+    message: "底层API接口响应code非200，服务可能异常"

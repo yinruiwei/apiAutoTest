@@ -1,0 +1,12 @@
+name: pda_confirm_pick
+system: pda
+request:
+  method: POST
+  path: /pick/confirm
+  headers:
+    Content-Type: application/json
+    Authorization: ${get_token("pda")}
+  json:
+    task_no: ${task_no}
+validate:
+  - eq: [status_code, 200]
